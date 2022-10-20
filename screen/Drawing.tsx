@@ -1,5 +1,5 @@
 // import per il funzionamento 
-import { FC, useRef, useState } from "react"
+import { FC, useRef, useState, useEffect } from "react"
 import { View, Text } from 'react-native';
 // stile
 import CommonStyles from "../styles/CommonStyles";
@@ -14,8 +14,11 @@ import Header from "../components/ui/Header";
 // slider
 import Slider from '@react-native-community/slider';
 // color picker
-import { TriangleColorPicker,fromHsv  } from 'react-native-color-picker'
-
+import { TriangleColorPicker, fromHsv } from 'react-native-color-picker'
+// file storage
+import { storeData, getData } from "../utils/storage";
+// imagePicker
+import * as ImagePicker from 'expo-image-picker';
 
 // props
 interface DrawingProps {
@@ -23,14 +26,18 @@ interface DrawingProps {
 }
 // state
 interface State {
-    settingVisible: boolean
+    settingVisible: boolean,
+    image: any
 }
 // inizializzo
 const initialState: State = {
-    settingVisible: false
+    settingVisible: false,
+    image: null
 }
+
 // colore vecchio
 let colorHex: string = ''
+let arrayPhoto: Array<string> = []
 
 const Drawing: FC<DrawingProps> = ({ navigation }) => {
 
@@ -38,6 +45,15 @@ const Drawing: FC<DrawingProps> = ({ navigation }) => {
     const [state, setState] = useState<State>(initialState)
     // imposto il riferimento
     const ref = useRef<SignatureViewRef>(null);
+
+    // popolo array immagine per non perderle 
+    useEffect(() => {
+        getPhoto()
+    }, [])
+
+    const getPhoto = async (): Promise<void> => {
+        arrayPhoto = await getData('localPhoto')
+    }
 
     const goBack = (): void => {
         navigation.goBack()
@@ -82,11 +98,38 @@ const Drawing: FC<DrawingProps> = ({ navigation }) => {
         ref.current?.changePenSize(value, value)
     }
     // colore
-    const setColor =  (color:any):void => {
-        colorHex =  fromHsv(color)
-        console.log(colorHex)
+    const setColor = (color: any): void => {
+        colorHex = fromHsv(color)
         ref.current?.changePenColor(colorHex)
     }
+    // leggere il file prima del salvataggio
+    const save = (): void => {
+        ref.current?.readSignature()
+    }
+    // salvataggio
+    const handleOK = (signature: string) => {
+        arrayPhoto.push(signature)
+        storeData(arrayPhoto, 'localPhoto')
+        alert('immagine salvata')
+    };
+    // inserire immagine
+    const pickImage = async (): Promise<void> => {
+        // No permissions request is necessary for launching the image library
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 1,
+            base64: true
+        });
+
+        console.log(result);
+
+        if (!result.cancelled) {
+            setState({
+                ...state,
+                image: result.base64
+            })
+        }
+    };
 
     return (
         <View style={[CommonStyles.genericContainer, CommonStyles.fullScreenSize, CommonStyles.positionRelative]}>
@@ -97,9 +140,15 @@ const Drawing: FC<DrawingProps> = ({ navigation }) => {
             />
             <Signature
                 ref={ref}
-                // onEnd={handleEnd}
+                onOK={handleOK}
                 onEmpty={handleEmpty}
                 webStyle={DrawStyle}
+                backgroundColor={'#fff'}
+                dataURL={state.image === undefined ? state.image
+                    : "data:image/jpg;base64," + state.image} 
+                bgHeight={CommonStyles.fullScreenSize.height}
+                bgWidth={CommonStyles.fullScreenSize.width}
+
             />
             {/* pannello di controllo */}
             <View style={[CommonStyles.genericContainer, CommonStyles.positionAbsolute, { top: 50, right: 10, zIndex: 9 }]}>
@@ -142,7 +191,19 @@ const Drawing: FC<DrawingProps> = ({ navigation }) => {
                 <ButtonBox
                     label="Size&color"
                     callback={menageSetting}
-                    buttonContainerStyle={[CommonStyles.circleButton, CommonStyles.brandColorBg,CommonStyles.marginY]}
+                    buttonContainerStyle={[CommonStyles.circleButton, CommonStyles.brandColorBg, CommonStyles.marginY]}
+                    buttonTextStyle={[CommonStyles.lightColorText, CommonStyles.boldFont]}
+                />
+                <ButtonBox
+                    label="pickImage"
+                    callback={pickImage}
+                    buttonContainerStyle={[CommonStyles.circleButton, CommonStyles.brandColorBg, CommonStyles.marginY]}
+                    buttonTextStyle={[CommonStyles.lightColorText, CommonStyles.boldFont]}
+                />
+                <ButtonBox
+                    label="save"
+                    callback={save}
+                    buttonContainerStyle={[CommonStyles.circleButton, CommonStyles.brandColorBg, CommonStyles.marginY]}
                     buttonTextStyle={[CommonStyles.lightColorText, CommonStyles.boldFont]}
                 />
             </View>
@@ -151,7 +212,7 @@ const Drawing: FC<DrawingProps> = ({ navigation }) => {
 
                 <View style={[CommonStyles.genericContainer, CommonStyles.positionAbsolute, CommonStyles.lightColorbg, { top: 50, left: 10, right: 10, width: '95%', height: '90%', zIndex: 10, borderRadius: 10 }]}>
                     <View style={CommonStyles.container4}>
-                        <Text style={[CommonStyles.textCenter, CommonStyles.normalTextSize, CommonStyles.marginY,CommonStyles.boldFont,CommonStyles.branColorText]}>
+                        <Text style={[CommonStyles.textCenter, CommonStyles.normalTextSize, CommonStyles.marginY, CommonStyles.boldFont, CommonStyles.branColorText]}>
                             CHOOSE THE COLOR
                         </Text>
                         <TriangleColorPicker
@@ -161,8 +222,8 @@ const Drawing: FC<DrawingProps> = ({ navigation }) => {
                             hideControls={true}
                         />
                     </View>
-                    <View style={[CommonStyles.container2,CommonStyles.centerItems,CommonStyles.column]}>
-                        <Text style={[{width:'100%'},CommonStyles.textCenter, CommonStyles.normalTextSize, CommonStyles.marginY]}>
+                    <View style={[CommonStyles.container2, CommonStyles.centerItems, CommonStyles.column]}>
+                        <Text style={[{ width: '100%' }, CommonStyles.textCenter, CommonStyles.normalTextSize, CommonStyles.marginY]}>
                             SCEGLI LA DIMENSIONE
                         </Text>
                         <Slider
@@ -174,7 +235,7 @@ const Drawing: FC<DrawingProps> = ({ navigation }) => {
                             thumbTintColor="#858AE3"
                             // onValueChange={setPenSize}-> probelma con il cambio colore
                             onSlidingComplete={setPenSize}
-                            
+
                         />
                         <ButtonBox
                             label="CLOSE"

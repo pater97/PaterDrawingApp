@@ -31,7 +31,8 @@ export default StyleSheet.create({
     },
     row:{
         display:'flex',
-        flexDirection:'row'
+        flexDirection:'row',
+        flexWrap:'wrap'
     },
     spaceAround:{
         justifyContent:"space-around"
@@ -75,6 +76,9 @@ export default StyleSheet.create({
     },
     marginY:{
         marginVertical:10
+    },
+    marginX:{
+        marginHorizontal:10
     },
     brandColorBg: {
         backgroundColor:'#613DC1',

@@ -20,6 +20,9 @@ const Home: FC<HomeProps> = ({ navigation }) => {
   const goToDrawing = (): void => {
     navigation.navigate('Drawing')
   }
+  const goToPrev = (): void => {
+    navigation.navigate('Preview')
+  }
 
 
   return (
@@ -33,9 +36,12 @@ const Home: FC<HomeProps> = ({ navigation }) => {
       </Text>
       
       <ButtonBox
-        // callback={goToDrawing}
         callback={goToDrawing}
         label={'DISEGNA'}
+      />
+      <ButtonBox
+        callback={goToPrev}
+        label={'GUARDA I LAVORI PRECEDENTI'}
       />
     </View>
   )

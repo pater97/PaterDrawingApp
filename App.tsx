@@ -6,6 +6,7 @@ import { SafeAreaView, StatusBar } from 'react-native';
 // SCREEN
 import Home from './screen/Home';
 import Drawing from './screen/Drawing';
+import Preview from './screen/Preview';
 // style
 import CommonStyles from './styles/CommonStyles';
 
@@ -19,6 +20,7 @@ export default function App() {
         <Stack.Navigator initialRouteName='Home' screenOptions={{headerShown: false}} >
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="Drawing" component={Drawing} />
+          <Stack.Screen name="Preview" component={Preview} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaView>
